@@ -168,7 +168,7 @@ goog.ime.chrome.os.Model.prototype.updateHighlight = function(newHighlight) {
  *
  * @param {number} step The number of steps to move, it could be negative.
  */
-goog.ime.chrome.os.Model.prototype.moveHighlight = function(step) {
+goog.ime.chrome.os.Model.prototype.moveHighlight = async function(step) {
   if (this.status != goog.ime.chrome.os.Status.SELECT) {
     return;
   }
@@ -181,7 +181,7 @@ goog.ime.chrome.os.Model.prototype.moveHighlight = function(step) {
  *
  * @param {number} step The number of steps to move, it could be negative.
  */
-goog.ime.chrome.os.Model.prototype.movePage = function(step) {
+goog.ime.chrome.os.Model.prototype.movePage = async function(step) {
   if (this.status != goog.ime.chrome.os.Status.SELECT) {
     return;
   }
@@ -207,7 +207,7 @@ goog.ime.chrome.os.Model.prototype.getPageIndex = function() {
 /**
  * Moves the cursor to the left.
  */
-goog.ime.chrome.os.Model.prototype.moveCursorLeft = function() {
+goog.ime.chrome.os.Model.prototype.moveCursorLeft = async function() {
   if (this.status != goog.ime.chrome.os.Status.SELECT ||
       this.cursorPos <= 0) {
     return;
@@ -225,7 +225,7 @@ goog.ime.chrome.os.Model.prototype.moveCursorLeft = function() {
   this.dispatchEvent(goog.ime.chrome.os.EventType.MODELUPDATED);
   this.holdSelectStatus_ = true;
   if (this.source) {
-    this.fetchCandidates_();
+    await this.fetchCandidates_();
   }
 };
 
@@ -233,7 +233,7 @@ goog.ime.chrome.os.Model.prototype.moveCursorLeft = function() {
 /**
  * Moves the cursor to the right.
  */
-goog.ime.chrome.os.Model.prototype.moveCursorRight = function() {
+goog.ime.chrome.os.Model.prototype.moveCursorRight = async function() {
   if (this.status != goog.ime.chrome.os.Status.SELECT ||
       this.cursorPos >= this.segments.length) {
     return;
@@ -252,7 +252,7 @@ goog.ime.chrome.os.Model.prototype.moveCursorRight = function() {
   this.highlightIndex = -1;
   this.dispatchEvent(goog.ime.chrome.os.EventType.MODELUPDATED);
   this.holdSelectStatus_ = true;
-  this.fetchCandidates_();
+  await this.fetchCandidates_();
 };
 
 
@@ -390,7 +390,7 @@ goog.ime.chrome.os.Model.prototype.enableUserDict = function(
  *
  * @param {string} text The text to append.
  */
-goog.ime.chrome.os.Model.prototype.updateSource = function(text) {
+goog.ime.chrome.os.Model.prototype.updateSource = async function(text) {
   // Check the max input length. If it's going to exceed the limit, do nothing.
   if (this.source.length + text.length >
       this.configFactory.getCurrentConfig().maxInputLen) {
@@ -406,14 +406,14 @@ goog.ime.chrome.os.Model.prototype.updateSource = function(text) {
   if (this.status == goog.ime.chrome.os.Status.SELECT) {
     this.holdSelectStatus_ = true;
   }
-  this.fetchCandidates_();
+  await this.fetchCandidates_();
 };
 
 
 /**
  * Processes revert, which is most likely caused by BACKSPACE.
  */
-goog.ime.chrome.os.Model.prototype.revert = function() {
+goog.ime.chrome.os.Model.prototype.revert = async function() {
   if (this.status != goog.ime.chrome.os.Status.FETCHING) {
     if (this.status == goog.ime.chrome.os.Status.SELECT) {
       this.holdSelectStatus_ = true;
@@ -446,7 +446,7 @@ goog.ime.chrome.os.Model.prototype.revert = function() {
       if (deletedChar == '\'') {
         this.decoder_.clear();
       }
-      this.fetchCandidates_();
+      await this.fetchCandidates_();
     }
   }
 };
@@ -461,8 +461,11 @@ goog.ime.chrome.os.Model.prototype.revert = function() {
  * @param {string=} opt_commit The committed text if it causes a full commit.
  *     Or empty string if this is not a full commit.
  */
-goog.ime.chrome.os.Model.prototype.selectCandidate = function(
+goog.ime.chrome.os.Model.prototype.selectCandidate = async function(
     opt_index, opt_commit) {
+  
+  console.log(this.source);
+  console.log(opt_index, opt_commit);
   if (this.status == goog.ime.chrome.os.Status.FETCHING) {
     return;
   }
@@ -503,34 +506,53 @@ goog.ime.chrome.os.Model.prototype.selectCandidate = function(
   this.highlightIndex = -1;
   this.source = this.segments.slice(this.commitPos, this.cursorPos).join('');
   this.decoder_.clear();
-  this.fetchCandidates_();
+  await this.fetchCandidates_();
 };
 
 
+goog.ime.chrome.os.Model.prototype.fetchRimeCandidates_ = async function() {
+  let RimeURL = 'http://127.0.0.1:12345';
+  let response = await fetch(
+    RimeURL,
+    {
+      method: "POST",
+      body: this.source
+    });
+  let text = await response.text();
+  let lines = text.split("\n");
+
+  let tokens = [];
+  let candidates = [];
+
+  if (lines.length >= 1) {
+    tokens = lines[0].split(" ");
+    for (let i=1; i < lines.length; i++) {
+      if (lines[i].length > 0){
+        candidates.push({
+          range: lines[i].length,
+          score: 0,
+          target: lines[i]
+        })
+      }
+    }
+  }
+
+  return {
+    tokens: tokens,
+    candidates: candidates
+  }
+}
 /**
  * Fetches candidates and composing text from decoder.
  *
  * @private
  */
-goog.ime.chrome.os.Model.prototype.fetchCandidates_ = function() {
-  if (!this.decoder_ || !this.decoder_.isReady()) {
-    return;
-  }
+goog.ime.chrome.os.Model.prototype.fetchCandidates_ = async function() {
   this.status = goog.ime.chrome.os.Status.FETCHING;
-  var ret = this.decoder_.decode(
-      this.source, this.configFactory.getCurrentConfig().requestNum);
-  if (!ret) {
-    this.status = goog.ime.chrome.os.Status.FETCHED;
-    if (this.configFactory.getCurrentConfig().autoHighlight ||
-        this.holdSelectStatus_) {
-      this.enterSelectInternal();
-    }
-    this.candidates = [];
-    this.notifyUpdates();
-    return;
-  }
-  var candidates = ret.candidates;
-  var tokens = ret.tokens;
+
+  let ret = await this.fetchRimeCandidates_();
+  let tokens = ret.tokens;
+  let candidates = ret.candidates;
 
   var committedSegments = this.segments.slice(0, this.commitPos);
   var prefixSegments = committedSegments.concat(tokens);
@@ -543,10 +565,10 @@ goog.ime.chrome.os.Model.prototype.fetchCandidates_ = function() {
   this.candidates = [];
   for (var i = 0; i < candidates.length; i++) {
     this.candidates.push(
-        new goog.ime.chrome.os.Candidate(
-            candidates[i].target.toString(), Number(candidates[i].range)));
+      new goog.ime.chrome.os.Candidate(
+          candidates[i].target.toString(), Number(candidates[i].range)));
   }
-
+  
   // Do not change goog.ime.chrome.os.Status.SELECT
   this.status = goog.ime.chrome.os.Status.FETCHED;
   if (this.configFactory.getCurrentConfig().autoHighlight ||

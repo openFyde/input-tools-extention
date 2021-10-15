@@ -309,7 +309,6 @@ goog.ime.chrome.os.Controller.prototype.handleEvent = function(e) {
     return false;
   }
 
-
   if (this.shortcutTable_ &&
       this.handleKeyInActionTable_(e, this.shortcutTable_)) {
     return true;
@@ -376,13 +375,13 @@ goog.ime.chrome.os.Controller.prototype.preProcess = function(e) {
  * @param {Event} e The key event.
  * @return {boolean} Whether the key event is processed.
  */
-goog.ime.chrome.os.Controller.prototype.processCharKey = function(e) {
+goog.ime.chrome.os.Controller.prototype.processCharKey = async function(e) {
   var text = this.configFactory.getCurrentConfig().transform(
       this.model.source, e.key);
   if (!text) {
     return this.model.status != goog.ime.chrome.os.Status.INIT;
   }
-  this.model.updateSource(text);
+  await this.model.updateSource(text);
   return true;
 };
 
@@ -400,7 +399,6 @@ goog.ime.chrome.os.Controller.prototype.handleKeyInActionTable_ = function(
   var Key = goog.ime.chrome.os.Key;
   var Modifier = goog.ime.chrome.os.Modifier;
   var key = this.getKey_(e);
-
   for (var i = 0, item; item = table[i]; i++) {
     // Each item of the key action table is an array with this format:
     // [EventType, Modifier, KeyCode/KeyChar, ModelStatus, MoreConditionFunc,
@@ -443,7 +441,7 @@ goog.ime.chrome.os.Controller.prototype.handleKeyInActionTable_ = function(
  * @param {Object} e The key event.
  * @return {boolean} Whether the key event is processed.
  */
-goog.ime.chrome.os.Controller.prototype.processNumberKey = function(e) {
+goog.ime.chrome.os.Controller.prototype.processNumberKey = async function(e) {
   var selectKeys = this.configFactory.getCurrentConfig().selectKeys;
   var pageOffset = selectKeys.indexOf(e.key);
   if (pageOffset < 0) {
@@ -452,7 +450,7 @@ goog.ime.chrome.os.Controller.prototype.processNumberKey = function(e) {
   var pageSize = this.configFactory.getCurrentConfig().pageSize;
   if (pageOffset >= 0 && pageOffset < pageSize) {
     var index = this.model.getPageIndex() * pageSize + pageOffset;
-    this.model.selectCandidate(index);
+    await this.model.selectCandidate(index);
   }
   return true;
 };
@@ -464,10 +462,10 @@ goog.ime.chrome.os.Controller.prototype.processNumberKey = function(e) {
  * @param {Event} e The key event.
  * @return {boolean} Whether the key event is processed.
  */
-goog.ime.chrome.os.Controller.prototype.processPuncKey = function(e) {
+goog.ime.chrome.os.Controller.prototype.processPuncKey = async function(e) {
   var config = this.configFactory.getCurrentConfig();
   var punc = config.postTransform(e.key);
-  this.model.selectCandidate(undefined, punc);
+  await this.model.selectCandidate(undefined, punc);
   return true;
 };
 
@@ -478,8 +476,8 @@ goog.ime.chrome.os.Controller.prototype.processPuncKey = function(e) {
  * @param {!goog.events.BrowserEvent} e The key event.
  * @return {boolean} Whether the key event is processed.
  */
-goog.ime.chrome.os.Controller.prototype.processRevertKey = function(e) {
-  this.model.revert();
+goog.ime.chrome.os.Controller.prototype.processRevertKey = async function(e) {
+  await this.model.revert();
   return true;
 };
 
@@ -490,12 +488,12 @@ goog.ime.chrome.os.Controller.prototype.processRevertKey = function(e) {
  * @param {Event} e The key event.
  * @return {boolean} Whether the key event is processed.
  */
-goog.ime.chrome.os.Controller.prototype.processCommitKey = function(e) {
+goog.ime.chrome.os.Controller.prototype.processCommitKey = async function(e) {
   if (e.key == goog.ime.chrome.os.Key.ENTER &&
       this.model.status == goog.ime.chrome.os.Status.SELECT) {
-    this.model.selectCandidate(-1, '');
+    await this.model.selectCandidate(-1, '');
   } else {
-    this.model.selectCandidate(undefined);
+    await this.model.selectCandidate(undefined);
   }
   return true;
 };
@@ -507,7 +505,7 @@ goog.ime.chrome.os.Controller.prototype.processCommitKey = function(e) {
  * @param {Event} e The key event.
  * @return {boolean} Whether the key event is processed.
  */
-goog.ime.chrome.os.Controller.prototype.processSelectKey = function(e) {
+goog.ime.chrome.os.Controller.prototype.processSelectKey = async function(e) {
   if (this.model.status == goog.ime.chrome.os.Status.FETCHED) {
     this.model.enterSelect();
   }
@@ -521,8 +519,8 @@ goog.ime.chrome.os.Controller.prototype.processSelectKey = function(e) {
  * @param {Event} e The key event.
  * @return {boolean} Whether the key event is processed.
  */
-goog.ime.chrome.os.Controller.prototype.processAbortKey = function(e) {
-  this.model.abort();
+goog.ime.chrome.os.Controller.prototype.processAbortKey = async function(e) {
+  await this.model.abort();
   return true;
 };
 

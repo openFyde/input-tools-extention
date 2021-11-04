@@ -30,7 +30,7 @@ i18n.input.lang.InputToolCode = {
       'zh-hant-t-i0-cangjie-1987-x-m0-simplified',
   INPUTMETHOD_CANTONESE_TRADITIONAL: 'yue-hant-t-i0-und',
   INPUTMETHOD_DAYI88_CHINESE_TRADITIONAL: 'zh-hant-t-i0-dayi-1988',
-  INPUTMETHOD_PINYIN_CHINESE_SIMPLIFIED: 'zh-t-i0-pinyin',
+  INPUTMETHOD_PINYIN_CHINESE_SIMPLIFIED: 'zh-rime',
   INPUTMETHOD_PINYIN_CHINESE_TRADITIONAL: 'zh-hant-t-i0-pinyin',
   INPUTMETHOD_HANGUL_KOREAN: 'ko-t-i0-und',
   INPUTMETHOD_SHUANGPING_ABC: 'zh-t-i0-pinyin-x0-shuangpin-abc',

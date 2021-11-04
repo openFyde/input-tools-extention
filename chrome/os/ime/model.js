@@ -185,7 +185,7 @@ goog.ime.chrome.os.Model.prototype.movePage = async function(step) {
   if (this.status != goog.ime.chrome.os.Status.SELECT) {
     return;
   }
-  var pageSize = this.configFactory.getCurrentConfig().pageSize;
+  var pageSize = parseInt(window.localStorage.getItem("pageSize") || this.configFactory.getCurrentConfig().pageSize);
   this.updateHighlight((this.getPageIndex() + step) * pageSize);
 };
 
@@ -199,7 +199,7 @@ goog.ime.chrome.os.Model.prototype.getPageIndex = function() {
   if (this.highlightIndex < 0 || this.candidates.length == 0) {
     return 0;
   }
-  var pageSize = this.configFactory.getCurrentConfig().pageSize;
+  var pageSize = parseInt(window.localStorage.getItem("pageSize") || this.configFactory.getCurrentConfig().pageSize);
   return Math.floor(this.highlightIndex / pageSize);
 };
 
@@ -451,6 +451,17 @@ goog.ime.chrome.os.Model.prototype.revert = async function() {
   }
 };
 
+goog.ime.chrome.os.Model.prototype.reportCandidates_ = async function(source, index, target) {
+  const RimeURL = 'http://127.0.0.1:12345';
+
+  let response = await fetch(
+    RimeURL,
+    {
+      method: 'POST',
+      body: "@" + source + " " + index.toString() + " " + target 
+    })
+}
+
 
 /**
  * Processes the candidate select action.
@@ -463,9 +474,6 @@ goog.ime.chrome.os.Model.prototype.revert = async function() {
  */
 goog.ime.chrome.os.Model.prototype.selectCandidate = async function(
     opt_index, opt_commit) {
-  
-  console.log(this.source);
-  console.log(opt_index, opt_commit);
   if (this.status == goog.ime.chrome.os.Status.FETCHING) {
     return;
   }
@@ -485,6 +493,12 @@ goog.ime.chrome.os.Model.prototype.selectCandidate = async function(
     this.clear();
     return;
   }
+
+  console.log(this.source);
+  console.log(opt_index);
+  console.log(this.candidates[index].target)
+
+  this.reportCandidates_(this.source, index, this.candidates[index].target);
 
   var source = '';
   for (var i = 0; i < candidate.range; ++i) {
@@ -511,11 +525,12 @@ goog.ime.chrome.os.Model.prototype.selectCandidate = async function(
 
 
 goog.ime.chrome.os.Model.prototype.fetchRimeCandidates_ = async function() {
-  let RimeURL = 'http://127.0.0.1:12345';
+  const RimeURL = 'http://127.0.0.1:12345';
+
   let response = await fetch(
     RimeURL,
     {
-      method: "POST",
+      method: 'POST',
       body: this.source
     });
   let text = await response.text();

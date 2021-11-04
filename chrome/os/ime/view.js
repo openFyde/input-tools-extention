@@ -178,7 +178,7 @@ goog.ime.chrome.os.View.prototype.refresh = function() {
  */
 goog.ime.chrome.os.View.prototype.showCandidates = function() {
   var pageIndex = this.model.getPageIndex();
-  var pageSize = this.configFactory.getCurrentConfig().pageSize;
+  var pageSize = parseInt(window.localStorage.getItem("pageSize") || this.configFactory.getCurrentConfig().pageSize);
   var from = pageIndex * pageSize;
   var to = from + pageSize;
   if (to > this.model.candidates.length) {

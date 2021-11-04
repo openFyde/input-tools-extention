@@ -80,7 +80,7 @@ goog.ime.chrome.os.Config.prototype.pagedownCharReg = /xyz/g;
  *
  * @type {number}
  */
-goog.ime.chrome.os.Config.prototype.pageSize = 5;
+goog.ime.chrome.os.Config.prototype.pageSize = 10;
 
 
 /**

@@ -447,7 +447,7 @@ goog.ime.chrome.os.Controller.prototype.processNumberKey = async function(e) {
   if (pageOffset < 0) {
     return true;
   }
-  var pageSize = this.configFactory.getCurrentConfig().pageSize;
+  var pageSize = parseInt(window.localStorage.getItem("pageSize") || this.configFactory.getCurrentConfig().pageSize);
   if (pageOffset >= 0 && pageOffset < pageSize) {
     var index = this.model.getPageIndex() * pageSize + pageOffset;
     await this.model.selectCandidate(index);

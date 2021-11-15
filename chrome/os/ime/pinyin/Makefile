@@ -36,7 +36,7 @@ CLOSURE_BUILDER:=$(CLOSURE_LIB)/closure/bin/build/closurebuilder.py
 VER:=$(shell sed -n -e '/"version"/p' manifest.json | cut -f4 -d '"')
 PACKAGE:=$(PROJECT)-$(VER).tar.gz
 
-all: background option data manifest pack
+all: background manifest
 
 debug: background_dbg option_dbg data manifest pack
 
@@ -56,29 +56,13 @@ background_dbg: dir
 		--namespace="goog.ime.chrome.os.Background" \
 		--output_mode=script > files/cros_background.js
 
-option: dir
-	@$(CLOSURE_BUILDER) --root=$(CLOSURE_LIB) --root=../ \
-		--namespace="goog.ime.chrome.os.PinyinOption" \
-		--output_mode=compiled \
-		--compiler_jar=$(CLOSURE_COMPILER) \
-		--compiler_flags="--compilation_level=ADVANCED_OPTIMIZATIONS" \
-		--compiler_flags="--externs=../../api_externs.js" \
-		> files/cros_option.js
-
-option_dbg: dir
-	@$(CLOSURE_BUILDER) --root=$(CLOSURE_LIB) --root=../ \
-		--namespace="goog.ime.chrome.os.PinyinOption" \
-		--output_mode=script > files/cros_option.js
-
-data: dir
-	@cp data files/data.js
-
 manifest: dir
 	@cp manifest.json files/; \
 	cp ../backgroundpage.html files/; \
-	cp ../option.html files/; \
-	cp ../option.css files/; \
-	cp -r locales files/_locales
+	cp -r locales files/_locales; \
+	cp data.js  files/; \
+	cp option.html  files/; \
+	cp option.js  files/;
 
 pack:
 	@mv files $(PROJECT); tar -zcf $(PACKAGE) $(PROJECT); mv $(PROJECT) files

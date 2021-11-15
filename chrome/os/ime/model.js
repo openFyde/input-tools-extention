@@ -56,6 +56,9 @@ goog.ime.chrome.os.Model = function() {
    */
   this.tokens = [];
 
+
+  this.reports = [];
+
   /**
    * The config factory
    *
@@ -451,14 +454,28 @@ goog.ime.chrome.os.Model.prototype.revert = async function() {
   }
 };
 
-goog.ime.chrome.os.Model.prototype.reportCandidates_ = async function(source, index, target) {
-  const RimeURL = 'http://127.0.0.1:12345';
+goog.ime.chrome.os.Model.prototype.RimeURL = 'http://127.0.0.1:12345';
+
+goog.ime.chrome.os.Model.prototype.reportCandidatesList_ = async function(reports) {
+  lines = [];
+  for (let [source, index, target] of reports) {
+    lines.push(source.replaceAll("ü", "v") + " " + index.toString() + " " + target);
+  }
 
   let response = await fetch(
-    RimeURL,
+    this.RimeURL,
     {
       method: 'POST',
-      body: "@" + source + " " + index.toString() + " " + target 
+      body: "@" + lines.join("\n")
+    })
+}
+
+goog.ime.chrome.os.Model.prototype.reportCandidates_ = async function(source, index, target) {
+  let response = await fetch(
+    this.RimeURL,
+    {
+      method: 'POST',
+      body: "@" + source.replaceAll("ü", "v") + " " + index.toString() + " " + target 
     })
 }
 
@@ -474,6 +491,7 @@ goog.ime.chrome.os.Model.prototype.reportCandidates_ = async function(source, in
  */
 goog.ime.chrome.os.Model.prototype.selectCandidate = async function(
     opt_index, opt_commit) {
+
   if (this.status == goog.ime.chrome.os.Status.FETCHING) {
     return;
   }
@@ -494,10 +512,7 @@ goog.ime.chrome.os.Model.prototype.selectCandidate = async function(
     return;
   }
 
-  console.log(this.source);
-  console.log(opt_index);
-  console.log(this.candidates[index].target)
-
+  this.reports.push([this.source, index, this.candidates[index].target]);
   this.reportCandidates_(this.source, index, this.candidates[index].target);
 
   var source = '';
@@ -525,13 +540,11 @@ goog.ime.chrome.os.Model.prototype.selectCandidate = async function(
 
 
 goog.ime.chrome.os.Model.prototype.fetchRimeCandidates_ = async function() {
-  const RimeURL = 'http://127.0.0.1:12345';
-
   let response = await fetch(
-    RimeURL,
+    this.RimeURL,
     {
       method: 'POST',
-      body: this.source
+      body: this.source.replaceAll("ü", "v"),
     });
   let text = await response.text();
   let lines = text.split("\n");

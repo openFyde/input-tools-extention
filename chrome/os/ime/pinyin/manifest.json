@@ -1,36 +1,22 @@
-// Copyright 2014 The ChromeOS IME Authors. All Rights Reserved.
-// limitations under the License.
-// See the License for the specific language governing permissions and
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// distributed under the License is distributed on an "AS-IS" BASIS,
-// Unless required by applicable law or agreed to in writing, software
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// You may obtain a copy of the License at
-// you may not use this file except in compliance with the License.
-// Licensed under the Apache License, Version 2.0 (the "License");
-//
 {
-  "name": "Chrome OS IME (Pinyin)",
+  "key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDSRMbBa14C/G45ow3CZvJlP7Nx3imrrj59+gWo7NzNdbtkQcne9HjTcmh3ALIHWtcDZ6fBiENBir9746MsgwC0h9yVg9BsgJJelLd7NV3hb6VXcPh9YFCKt6maLviENv1oApmMpY86wHifMiGr7WxR72T21V1RQQzetNTcQC3tvwIDAQAB",
+  "name": "Chrome OS IME (RIME)",
   "version": "1.0.0.0",
   "default_locale": "en",
   "permissions": [
-    "http://*/",
-    "https://*/",
     "input",
-    "unlimitedStorage"
+    "unlimitedStorageshu"
   ],
   "background": {
     "page": "backgroundpage.html"
   },
   "input_components": [
     {
-    "name": "__MSG_PINYIN_INPUTMETHOD__",
+    "name": "__MSG_INPUTMETHOD_RIME__",
     "type": "ime",
-    "id": "zh-t-i0-pinyin",
-    "description": "Pinyin",
-    "language": "zh",
+    "id": "zh-rime",
+    "description": "rime",
+    "language": ["zh", "zh-CN"],
     "layouts": ["us"]
     }
   ],

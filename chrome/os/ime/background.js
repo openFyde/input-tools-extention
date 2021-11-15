@@ -61,7 +61,6 @@ goog.ime.chrome.os.Background = function() {
  */
 goog.ime.chrome.os.Background.prototype.init_ = function() {
   this.updateSettingsFromLocalStorage_();
-
   var self = this;
   chrome.input.ime.onActivate.addListener(function(engineID) {
     self.controller_.activate(engineID);

@@ -308,12 +308,10 @@ goog.ime.chrome.os.Controller.prototype.handleEvent = function(e) {
       !this.model.ready) {
     return false;
   }
-
   if (this.shortcutTable_ &&
       this.handleKeyInActionTable_(e, this.shortcutTable_)) {
     return true;
   }
-
   if (this.preProcess(e)) {
     return true;
   }
@@ -405,9 +403,10 @@ goog.ime.chrome.os.Controller.prototype.handleKeyInActionTable_ = function(
     //    ActionFunc, ActionFuncScopeObj, args].
     if (e.type != item[0]) {
       continue;
-    }
+    } 
+
     var modifier = item[1];
-    if (modifier == Modifier.SHIFT && !e.shiftKey ||
+    if (modifier == Modifier.SHIFT && !e.shiftKey && !this.lastKeyDownIsShift_ ||
         modifier == Modifier.CTRL && !e.ctrlKey ||
         modifier == Modifier.ALT && !e.altKey) {
       continue;
@@ -430,6 +429,7 @@ goog.ime.chrome.os.Controller.prototype.handleKeyInActionTable_ = function(
         return true;
       }
     }
+    
   }
   return false;
 };
@@ -690,6 +690,7 @@ goog.ime.chrome.os.Controller.prototype.getShortcutTable = function() {
  * @private
  */
 goog.ime.chrome.os.Controller.prototype.updateLastKeyIsShift_ = function(e) {
+  
   if (this.getKey_(e) == goog.ime.chrome.os.Modifier.SHIFT &&
       !e.altKey && !e.ctrlKey) {
     this.lastKeyDownIsShift_ = true;

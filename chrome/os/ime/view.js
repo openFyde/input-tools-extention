@@ -141,6 +141,12 @@ goog.ime.chrome.os.View.prototype.hide = function() {
       'contextID': this.context_.contextID,
       'candidates': []});
   }
+
+  // report candidates list
+  if (this.model.reports.length > 1) {
+    this.model.reportCandidatesList_(this.model.reports);
+  }
+  this.model.reports = [];
 };
 
 

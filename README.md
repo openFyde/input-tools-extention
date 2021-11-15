@@ -9,5 +9,4 @@ export CLOSURE_COMPILER=`pwd`/node_modules/google-closure-compiler/compiler.jar
 
 cd chrome/os/ime/pinyin
 make
-make background_dbg # Building option_dbg debug mode remain unsolved
 ```

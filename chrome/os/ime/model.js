@@ -492,6 +492,14 @@ goog.ime.chrome.os.Model.prototype.reportCandidates_ = async function(source, in
 goog.ime.chrome.os.Model.prototype.selectCandidate = async function(
     opt_index, opt_commit) {
 
+  
+  if (window.imeBackground.vk_enable) {
+    chrome.runtime.sendMessage({
+      type: "candidates_back",
+      msg: {source: '', candidates: []}
+    })
+  }  
+
   if (this.status == goog.ime.chrome.os.Status.FETCHING) {
     return;
   }
@@ -595,6 +603,17 @@ goog.ime.chrome.os.Model.prototype.fetchCandidates_ = async function() {
     this.candidates.push(
       new goog.ime.chrome.os.Candidate(
           candidates[i].target.toString(), Number(candidates[i].range)));
+  }
+
+  if (window.imeBackground.vk_enable) {
+    let tmp = [];
+    for (var i = 0; i < candidates.length; i++) {
+      tmp.push({candidate: candidates[i].target.toString(), ix: i});
+    }
+    chrome.runtime.sendMessage({
+      type: "candidates_back",
+      msg: {source: this.source, candidates: tmp}
+    })
   }
   
   // Do not change goog.ime.chrome.os.Status.SELECT

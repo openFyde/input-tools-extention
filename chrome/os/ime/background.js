@@ -38,6 +38,8 @@ goog.ime.chrome.os.Background = function() {
    */
   this.controller_ = new goog.ime.chrome.os.Controller();
 
+  this.vk_enable = false;
+
   /**
    * The local storage handler.
    *
@@ -104,7 +106,17 @@ goog.ime.chrome.os.Background.prototype.init_ = function() {
   if (chrome.inputMethodPrivate && chrome.inputMethodPrivate.startIme) {
     chrome.inputMethodPrivate.startIme();
   }
+
+  chrome.virtualKeyboardPrivate.onKeyboardClosed.addListener(function() {
+    self.vk_enable = false;
+  })
+
 };
+
+
+
+
+
 
 
 /**
@@ -144,6 +156,8 @@ goog.ime.chrome.os.Background.prototype.processRequest = function(
 };
 
 
+var imeBackground;
+
 (function() {
-  new goog.ime.chrome.os.Background();
+  imeBackground = new goog.ime.chrome.os.Background();
 }) ();

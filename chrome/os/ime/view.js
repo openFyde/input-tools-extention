@@ -203,7 +203,8 @@ goog.ime.chrome.os.View.prototype.showCandidates = function() {
   chrome.input.ime.setCandidates({
     'contextID': this.context_.contextID,
     'candidates': displayItems});
-  if (to > from) {
+
+  if (to > from && !(window.imeBackground.vk_enable)) {
     var hasHighlight = (this.model.highlightIndex >= 0);
     chrome.input.ime.setCandidateWindowProperties({
       'engineID': this.inputToolCode_,

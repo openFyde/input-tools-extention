@@ -283,12 +283,19 @@ goog.ime.chrome.os.Controller.prototype.setPageSettings = function(
  * @param {string} stateId The state ID.
  */
 goog.ime.chrome.os.Controller.prototype.switchInputToolState = function(
-    stateId) {
+    stateId, from_vk) {
   var config = this.configFactory.getCurrentConfig();
   config.states[stateId].value = !config.states[stateId].value;
   var stateID = goog.ime.chrome.os.StateID;
   if (stateId == stateID.LANG) {
     config.states[stateID.PUNC].value = config.states[stateID.LANG].value;
+
+    if (window.imeBackground.vk_enable && !from_vk) {
+      chrome.runtime.sendMessage({
+        type: 'front_toggle_language_state',
+        msg: config.states[stateId].value
+      })
+    }
   }
   this.model.clear();
   this.view.updateItems();

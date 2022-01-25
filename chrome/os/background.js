@@ -120,7 +120,7 @@ i18n.input.chrome.Background = function() {
 
   // Sets up a listener which communicate with the
   // option page or inputview
-  // window.
+  // window.f
   chrome.runtime.onMessage.addListener(this.wrapAsyncHandler_(this.onMessage));
   this.eventHandler.listen(this.eventTarget,
       i18n.input.chrome.EventType.EXECUTE_WAITING_EVENT,
@@ -362,6 +362,8 @@ Background.prototype.executeWaitingEventHandlers = function() {
  *     order to send a response asynchronously.
  */
 Background.prototype.onMessage = function(message, sender, sendResponse) {
+
+  console.log(message, sender, sendResponse);
   if (message[Name.TYPE] == Type.VISIBILITY_CHANGE &&
       message[Name.VISIBILITY]) {
     chrome.input.ime.setCandidateWindowProperties(goog.object.create(
@@ -459,6 +461,8 @@ Background.prototype.onReset = function(engineID) {
  * @protected
  */
 Background.prototype.onKeyEventAsync = function(engineID, keyData) {
+
+  console.log(keyData);
   if (this.activeController) {
     // Sets the correct next request id.
     this.activeController.requestId = Number(keyData.requestId) + 1;

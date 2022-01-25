@@ -291,6 +291,7 @@ goog.ime.chrome.os.Model.prototype.clear = function() {
   this.context = '';
   this.highlightIndex = -1;
   this.candidates = [];
+  this.auxiliaryText = ''; 
   this.status = goog.ime.chrome.os.Status.INIT;
   this.holdSelectStatus_ = false;
 };
@@ -558,10 +559,17 @@ goog.ime.chrome.os.Model.prototype.fetchRimeCandidates_ = async function() {
   let lines = text.split("\n");
 
   let tokens = [];
+  let displayTokens = [];
   let candidates = [];
 
   if (lines.length >= 1) {
-    tokens = lines[0].split(" ");
+    parts = lines[0].split('（')
+    tokens = parts[0].split(" ");
+
+    if (parts.length > 1) {
+      displayTokens.push(parts[1].split('）')[0]);
+    }
+
     for (let i=1; i < lines.length; i++) {
       if (lines[i].length > 0){
         candidates.push({
@@ -575,7 +583,8 @@ goog.ime.chrome.os.Model.prototype.fetchRimeCandidates_ = async function() {
 
   return {
     tokens: tokens,
-    candidates: candidates
+    candidates: candidates,
+    displayTokens: displayTokens,
   }
 }
 /**
@@ -594,6 +603,7 @@ goog.ime.chrome.os.Model.prototype.fetchCandidates_ = async function() {
   var prefixSegments = committedSegments.concat(tokens);
   var suffixSegments = this.segments.slice(this.cursorPos);
 
+  this.auxiliaryText = ret.displayTokens.join('');
   this.source = tokens.join('');
   this.segments = prefixSegments.concat(suffixSegments);
   this.cursorPos = prefixSegments.length;

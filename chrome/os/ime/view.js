@@ -206,13 +206,21 @@ goog.ime.chrome.os.View.prototype.showCandidates = function() {
 
   if (to > from && !(window.imeBackground.vk_enable)) {
     var hasHighlight = (this.model.highlightIndex >= 0);
-    chrome.input.ime.setCandidateWindowProperties({
+    let options = {
       'engineID': this.inputToolCode_,
       'properties': {
         'visible': true,
         'cursorVisible': hasHighlight,
         'vertical': true,
-        'pageSize': to - from}});
+        'pageSize': to - from
+      }
+    }
+    if (this.model.auxiliaryText) {
+      options.properties.auxiliaryText = this.model.auxiliaryText;
+      options.properties.auxiliaryTextVisible = true;
+    }
+
+    chrome.input.ime.setCandidateWindowProperties(options);
     if (hasHighlight) {
       chrome.input.ime.setCursorPosition({
         'contextID': this.context_.contextID,

@@ -56,6 +56,29 @@ goog.ime.chrome.os.Background = function() {
 };
 
 
+
+async function setSchema() {
+  let body = "=schema";
+
+  while (true) {
+    try {
+      let response = await fetch(
+        'http://127.0.0.1:12345',
+        {
+          method: "POST",
+          body: body
+      });
+      let text = await response.text();
+      window.localStorage.setItem("schema", text);
+      window.localStorage.setItem("schema_change", "true");
+    } catch (e) {
+      await new Promise(resolve => { setTimeout(resolve, 1000)});
+      console.log(e);
+    }
+  }
+}
+
+
 /**
  * Initializes the background scripts.
  *
@@ -80,6 +103,8 @@ goog.ime.chrome.os.Background.prototype.init_ = function() {
     self.controller_.unregister();
   });
 
+  setSchema();
+
   // Since onReset evnet is implemented in M29, it needs to keep the backward
   // compatibility here.
   var onReset = chrome.input.ime['onReset'];
@@ -90,6 +115,10 @@ goog.ime.chrome.os.Background.prototype.init_ = function() {
   }
 
   chrome.input.ime.onKeyEvent.addListener(function(engine, keyEvent) {
+    if (window.localStorage.getItem("schema_change")) {
+      self.controller_.keyActionTable_ = self.controller_.getKeyActionTable();
+    }
+
     return self.controller_.handleEvent(keyEvent);
   });
 

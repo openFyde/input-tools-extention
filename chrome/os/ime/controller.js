@@ -611,7 +611,7 @@ goog.ime.chrome.os.Controller.prototype.getKeyActionTable = function() {
 
   // [EventType, Modifier, KeyCode/KeyChar, ModelStatus, MoreConditionFunc,
   //  ActionFunc, ActionFuncScopeObj, args]
-  return [
+  let tables = [
     [Type.KEYDOWN, 0, Key.PAGE_UP, null, onStageCondition,
      this.model.movePage, this.model, 1],
     [Type.KEYDOWN, 0, config.pageupCharReg, Status.SELECT, null,
@@ -645,10 +645,14 @@ goog.ime.chrome.os.Controller.prototype.getKeyActionTable = function() {
     [Type.KEYDOWN, 0, config.editorCharReg, null, null,
      this.processCharKey, this],
     [Type.KEYDOWN, Modifier.SHIFT, config.editorCharReg, null, null,
-     this.processCharKey, this],
-    [Type.KEYDOWN, 0, config.punctuationReg, null, onStageCondition,
-     this.processPuncKey, this]
+     this.processCharKey, this]
   ];
+
+  if (window.localStorage.getItem("schema") == 'double_pinyin_mspy') {
+    tables.push([Type.KEYDOWN, 0, ";", null, onStageCondition, this.processCharKey, this])
+  }
+  tables.push([Type.KEYDOWN, 0, config.punctuationReg, null, onStageCondition, this.processPuncKey, this])
+  return tables;
 };
 
 

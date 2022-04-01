@@ -71,6 +71,7 @@ async function setSchema() {
       let text = await response.text();
       window.localStorage.setItem("schema", text);
       window.localStorage.setItem("schema_change", "true");
+      break;
     } catch (e) {
       await new Promise(resolve => { setTimeout(resolve, 1000)});
       console.log(e);
@@ -85,9 +86,11 @@ async function setSchema() {
  * @private
  */
 goog.ime.chrome.os.Background.prototype.init_ = function() {
+  setSchema();
   this.updateSettingsFromLocalStorage_();
   var self = this;
   chrome.input.ime.onActivate.addListener(function(engineID) {
+    setSchema();
     self.controller_.activate(engineID);
   });
 
@@ -102,8 +105,6 @@ goog.ime.chrome.os.Background.prototype.init_ = function() {
   chrome.input.ime.onBlur.addListener(function(contextID) {
     self.controller_.unregister();
   });
-
-  setSchema();
 
   // Since onReset evnet is implemented in M29, it needs to keep the backward
   // compatibility here.

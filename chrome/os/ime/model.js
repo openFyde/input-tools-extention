@@ -444,7 +444,9 @@ goog.ime.chrome.os.Model.prototype.revert = async function() {
 
     this.source = this.segments.slice(this.commitPos, this.cursorPos).join('');
     if (this.source == '') {
-      this.notifyUpdates(true);
+      this.notifyUpdates();
+      this.fetchCandidates_();
+      this.clear()();
     } else {
       this.notifyUpdates();
       if (deletedChar == '\'') {

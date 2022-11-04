@@ -5,10 +5,9 @@ build chrome/os/ime/pinyin/files/cros_background.js for project-ime/app-i18n/chr
 
 
 ```
-npm i google-closure-compiler@20170626.0.0 google-closure-library@20150315.0.0
-export CLOSURE_LIB=`pwd`/node_modules/google-closure-library
-export CLOSURE_COMPILER=`pwd`/node_modules/google-closure-compiler/compiler.jar
+# install build dep, python2 is needed for google-closure-compiler/google-closure-library
+npm i 
 
-cd chrome/os/ime/pinyin
+# make
 make
 ```

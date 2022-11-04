@@ -1,6 +1,9 @@
 SHELL:=/bin/bash
 PROJECT:=chromeos-pinyin
+CLOSURE_LIB=node_modules/google-closure-library
+CLOSURE_COMPILER=node_modules/google-closure-compiler/compiler.jar
 CLOSURE_BUILDER:=$(CLOSURE_LIB)/closure/bin/build/closurebuilder.py
+
 
 all: background
 

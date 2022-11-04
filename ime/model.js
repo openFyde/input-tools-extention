@@ -255,6 +255,7 @@ goog.ime.chrome.os.Model.prototype.moveCursorRight = async function() {
   this.highlightIndex = -1;
   this.dispatchEvent(goog.ime.chrome.os.EventType.MODELUPDATED);
   this.holdSelectStatus_ = true;
+
   await this.fetchCandidates_();
 };
 
@@ -445,8 +446,7 @@ goog.ime.chrome.os.Model.prototype.revert = async function() {
     this.source = this.segments.slice(this.commitPos, this.cursorPos).join('');
     if (this.source == '') {
       this.notifyUpdates();
-      this.fetchCandidates_();
-      this.clear()();
+      this.clear();
     } else {
       this.notifyUpdates();
       if (deletedChar == '\'') {

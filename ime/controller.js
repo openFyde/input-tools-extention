@@ -297,6 +297,7 @@ goog.ime.chrome.os.Controller.prototype.switchInputToolState = function(
       })
     }
   }
+  this.model.selectCandidate(-1, '');
   this.model.clear();
   this.view.updateItems();
   this.view.hide();

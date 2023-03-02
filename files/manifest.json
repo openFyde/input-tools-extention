@@ -1,0 +1,46 @@
+{
+  "name": "Chinese RIME 2",
+  "version": "1.0.0.0",
+  "description": "RIME for Chromium OS.",
+  "default_locale": "en",
+  "permissions": [
+    "accessibilityFeatures.read",
+    "app.window.alpha",
+    "app.window.alwaysOnTop",
+    "app.window.ime",
+    "audioCapture",
+    "crashReportPrivate",
+    "input",
+    "inputMethodPrivate",
+    "metricsPrivate",
+    "system.display",
+    "tabs",
+    "tts",
+    "unlimitedStorage",
+    "virtualKeyboardPrivate"
+  ],
+  "background": {
+    "page": "backgroundpage.html"
+  },
+  "input_components": [
+    {
+      "name": "__MSG_pinyin_inputmethod__",
+      "id": "zh-rime",
+      "indicator": "r2",
+      "language": [
+        "zh-CN",
+        "zh"
+      ],
+      "layouts": [
+        "us"
+      ],
+      "input_view": "inputview.html"
+    }
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:12346/"
+  ],
+  
+  "options_page": "option.html",
+  "manifest_version": 2
+}

@@ -56,9 +56,6 @@ goog.ime.chrome.os.Model = function() {
    */
   this.tokens = [];
 
-
-  this.reports = [];
-
   /**
    * The config factory
    *
@@ -66,6 +63,8 @@ goog.ime.chrome.os.Model = function() {
    * @protected
    */
   this.configFactory = goog.ime.chrome.os.ConfigFactory.getInstance();
+
+  this.initWebSocket();
 };
 goog.inherits(goog.ime.chrome.os.Model, goog.events.EventTarget);
 
@@ -203,7 +202,12 @@ goog.ime.chrome.os.Model.prototype.getPageIndex = function() {
     return 0;
   }
   var pageSize = parseInt(window.localStorage.getItem("pageSize") || this.configFactory.getCurrentConfig().pageSize);
-  return Math.floor(this.highlightIndex / pageSize);
+  let pageIndex = Math.floor(this.highlightIndex / pageSize);
+
+  if (Math.floor(this.candidates.length / pageSize) - pageIndex <= 2) {
+    this.fetchRimeMoreCandidates_();
+  }
+  return pageIndex;
 };
 
 
@@ -457,29 +461,10 @@ goog.ime.chrome.os.Model.prototype.revert = async function() {
   }
 };
 
-goog.ime.chrome.os.Model.prototype.RimeURL = 'http://127.0.0.1:12345';
-
-goog.ime.chrome.os.Model.prototype.reportCandidatesList_ = async function(reports) {
-  lines = [];
-  for (let [source, index, target] of reports) {
-    lines.push(source.replaceAll("ü", "v") + " " + index.toString() + " " + target);
-  }
-
-  let response = await fetch(
-    this.RimeURL,
-    {
-      method: 'POST',
-      body: "@" + lines.join("\n")
-    })
-}
+goog.ime.chrome.os.Model.prototype.RimeWebSocketURL = 'ws://127.0.0.1:12346';
 
 goog.ime.chrome.os.Model.prototype.reportCandidates_ = async function(source, index, target) {
-  let response = await fetch(
-    this.RimeURL,
-    {
-      method: 'POST',
-      body: "@" + source.replaceAll("ü", "v") + " " + index.toString() + " " + target 
-    })
+  this.socket.send(":"+index.toString());
 }
 
 
@@ -523,7 +508,6 @@ goog.ime.chrome.os.Model.prototype.selectCandidate = async function(
     return;
   }
 
-  this.reports.push([this.source, index, this.candidates[index].target]);
   this.reportCandidates_(this.source, index, this.candidates[index].target);
 
   var source = '';
@@ -549,46 +533,104 @@ goog.ime.chrome.os.Model.prototype.selectCandidate = async function(
   await this.fetchCandidates_();
 };
 
+goog.ime.chrome.os.Model.prototype.firstCandidateLineBack = function (line) {
+  this.auxiliaryText = '';
 
-goog.ime.chrome.os.Model.prototype.fetchRimeCandidates_ = async function() {
-  let response = await fetch(
-    this.RimeURL,
-    {
-      method: 'POST',
-      body: this.source.replaceAll("ü", "v"),
-    });
-  let text = await response.text();
-  let lines = text.split("\n");
+  parts = line.split('（')
+  tokens = parts[0].split(" ");
 
-  let tokens = [];
-  let displayTokens = [];
-  let candidates = [];
-
-  if (lines.length >= 1) {
-    parts = lines[0].split('（')
-    tokens = parts[0].split(" ");
-
-    if (parts.length > 1) {
-      displayTokens.push(parts[1].split('）')[0]);
-    }
-
-    for (let i=1; i < lines.length; i++) {
-      if (lines[i].length > 0){
-        candidates.push({
-          range: lines[i].length,
-          score: 0,
-          target: lines[i]
-        })
-      }
-    }
+  var committedSegments = this.segments.slice(0, this.commitPos);
+  var prefixSegments = committedSegments.concat(tokens);
+  var suffixSegments = this.segments.slice(this.cursorPos);
+  this.source = tokens.join('');
+  this.segments = prefixSegments.concat(suffixSegments);
+  this.cursorPos = prefixSegments.length;
+  if (parts.length > 1) {
+      this.auxiliaryText = parts[1].split('）')[0];
   }
 
-  return {
-    tokens: tokens,
-    candidates: candidates,
-    displayTokens: displayTokens,
+  this.status = goog.ime.chrome.os.Status.FETCHED;
+  if (this.configFactory.getCurrentConfig().autoHighlight ||
+      this.holdSelectStatus_) {
+    this.enterSelectInternal();
+  }
+  this.notifyUpdates();
+
+  // can not fetch by page in virtualkeyboard
+  if (window.imeBackground.vk_enable) {
+    for (let i = 0; i < 7; i++) {
+      this.fetchRimeMoreCandidates_();
+    }
   }
 }
+
+goog.ime.chrome.os.Model.prototype.reloadWebSocket = function() {
+  if (this.socket) {
+    this.socket.close();
+  }
+  this.initWebSocket();
+}
+
+goog.ime.chrome.os.Model.prototype.initWebSocket = function() {
+  console.log("initWebSocket");
+  this.socket = new WebSocket(this.RimeWebSocketURL, "candidate");
+  this.socket.onopen = (e) => {console.log("socket open");};
+  this.socket.onerror = (e) => {console.log("socket error", e);};
+
+  let that = this;
+  this.socket.onclose = function(event) {
+    if (event.wasClean) {
+      console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+    } else {
+      console.log('[close] Connection died');
+    }
+  };
+
+  this.socket.onmessage = function(event) {
+    let lines = event.data.split("\n");
+    let startIx = 0;
+    // first line is tokens when retrieve candidates for first time
+    if (that.candidates.length == 0) {
+        startIx = 1;
+    }
+
+    // push candidates
+    for (let i = startIx; i < lines.length; i++) {
+      if (lines[i].length > 0) {
+      that.candidates.push(
+          new goog.ime.chrome.os.Candidate(
+              lines[i].toString(), Number(lines[i].length)));
+      }
+    }
+
+    // push candidates to virtual keyboard
+    if (window.imeBackground.vk_enable) {
+      let tmp = [];
+      for (const [i, c] of that.candidates.entries()) {
+        tmp.push({candidate: c.target, ix: i});
+      }
+      chrome.runtime.sendMessage({
+        type: "candidates_back",
+        msg: {source: that.source, candidates: tmp}
+      });
+    }
+
+    // notifyUpdates when retrieve candidates for first time
+    if (startIx == 1 && lines.length > 0) {
+      that.firstCandidateLineBack(lines[0]);
+    }
+
+  }
+}
+
+goog.ime.chrome.os.Model.prototype.fetchRimeCandidates_ = async function(source) {
+  this.socket.send(source.replaceAll("ü", "v"));
+};
+
+goog.ime.chrome.os.Model.prototype.fetchRimeMoreCandidates_ = async function(source) {
+  this.socket.send("");
+};
+
 /**
  * Fetches candidates and composing text from decoder.
  *
@@ -597,44 +639,9 @@ goog.ime.chrome.os.Model.prototype.fetchRimeCandidates_ = async function() {
 goog.ime.chrome.os.Model.prototype.fetchCandidates_ = async function() {
   this.status = goog.ime.chrome.os.Status.FETCHING;
 
-  let ret = await this.fetchRimeCandidates_();
-  let tokens = ret.tokens;
-  let candidates = ret.candidates;
-
-  var committedSegments = this.segments.slice(0, this.commitPos);
-  var prefixSegments = committedSegments.concat(tokens);
-  var suffixSegments = this.segments.slice(this.cursorPos);
-
-  this.auxiliaryText = ret.displayTokens.join('');
-  this.source = tokens.join('');
-  this.segments = prefixSegments.concat(suffixSegments);
-  this.cursorPos = prefixSegments.length;
-
   this.candidates = [];
-  for (var i = 0; i < candidates.length; i++) {
-    this.candidates.push(
-      new goog.ime.chrome.os.Candidate(
-          candidates[i].target.toString(), Number(candidates[i].range)));
-  }
+  this.fetchRimeCandidates_(this.source);
 
-  if (window.imeBackground.vk_enable) {
-    let tmp = [];
-    for (var i = 0; i < candidates.length; i++) {
-      tmp.push({candidate: candidates[i].target.toString(), ix: i});
-    }
-    chrome.runtime.sendMessage({
-      type: "candidates_back",
-      msg: {source: this.source, candidates: tmp}
-    })
-  }
-  
-  // Do not change goog.ime.chrome.os.Status.SELECT
-  this.status = goog.ime.chrome.os.Status.FETCHED;
-  if (this.configFactory.getCurrentConfig().autoHighlight ||
-      this.holdSelectStatus_) {
-    this.enterSelectInternal();
-  }
-  this.notifyUpdates();
 };
 
 

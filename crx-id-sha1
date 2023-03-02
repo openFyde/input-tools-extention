@@ -1,0 +1,2 @@
+echo -n "nfglebjgiflmmcdddkbcbgmdkomlfcpa" | sha1sum | tr '[:lower:]' '[:upper:]'
+7576E2B5BFBC3893C37DB1532F305BCE04270880

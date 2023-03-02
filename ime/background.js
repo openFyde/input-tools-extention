@@ -58,27 +58,21 @@ goog.ime.chrome.os.Background = function() {
 
 
 async function setSchema() {
-  let body = "=schema";
-
   while (true) {
     try {
       let response = await fetch(
-        'http://127.0.0.1:12345',
-        {
-          method: "POST",
-          body: body
-      });
+        'http://127.0.0.1:12346/schema/current'
+      );
       let text = await response.text();
       window.localStorage.setItem("schema", text);
       window.localStorage.setItem("schema_change", "true");
       break;
     } catch (e) {
-      await new Promise(resolve => { setTimeout(resolve, 1000)});
+      await new Promise(resolve => { setTimeout(resolve, 250)});
       console.log(e);
     }
   }
 }
-
 
 /**
  * Initializes the background scripts.
@@ -86,23 +80,39 @@ async function setSchema() {
  * @private
  */
 goog.ime.chrome.os.Background.prototype.init_ = function() {
+  console.log(">>>init");
   setSchema();
   this.updateSettingsFromLocalStorage_();
   var self = this;
   chrome.input.ime.onActivate.addListener(function(engineID) {
-    setSchema();
+    console.log(">>>onActivate");
     self.controller_.activate(engineID);
   });
 
   chrome.input.ime.onDeactivated.addListener(function() {
+    console.log(">>>onDeactivated");
     self.controller_.deactivate();
   });
 
   chrome.input.ime.onFocus.addListener(function(context) {
+    console.log(">>>onFocus");
     self.controller_.register(context);
+
+    console.log(">>>onFocus: " + window.localStorage.getItem("schema_change"));
+
+    if (window.localStorage.getItem("schema_change")) {
+      // for double pinyin
+      self.controller_.keyActionTable_ = self.controller_.getKeyActionTable();
+
+      // reload web socket
+      self.controller_.model.reloadWebSocket();
+
+      window.localStorage.setItem("schema_change", "");
+    }
   });
 
   chrome.input.ime.onBlur.addListener(function(contextID) {
+    console.log(">>>onBlur");
     self.controller_.unregister();
   });
 
@@ -116,10 +126,6 @@ goog.ime.chrome.os.Background.prototype.init_ = function() {
   }
 
   chrome.input.ime.onKeyEvent.addListener(function(engine, keyEvent) {
-    if (window.localStorage.getItem("schema_change")) {
-      self.controller_.keyActionTable_ = self.controller_.getKeyActionTable();
-    }
-
     return self.controller_.handleEvent(keyEvent);
   });
 
@@ -132,21 +138,26 @@ goog.ime.chrome.os.Background.prototype.init_ = function() {
       engineID, stateID) {
         self.controller_.switchInputToolState(stateID);
       });
+  if (chrome.inputMethodPrivate) {
+    console.log(">>>has chrome.inputMethodPrivate");
+    if (chrome.inputMethodPrivate && chrome.inputMethodPrivate.startIme) {
 
-  if (chrome.inputMethodPrivate && chrome.inputMethodPrivate.startIme) {
-    chrome.inputMethodPrivate.startIme();
+      chrome.inputMethodPrivate.startIme();
+    }
+  } else {
+    console.log("!!!no chrome.inputMethodPrivate");
   }
 
-  chrome.virtualKeyboardPrivate.onKeyboardClosed.addListener(function() {
-    self.vk_enable = false;
-  })
+  if (chrome.virtualKeyboardPrivate) {
+    console.log(">>>has chrome.virtualKeyboardPrivate");
+    chrome.virtualKeyboardPrivate.onKeyboardClosed.addListener(function() {
+      self.vk_enable = false;
+    })
+  } else {
+    console.log("!!!no chrome.virtualKeyboardPrivate");
+  }
 
 };
-
-
-
-
-
 
 
 /**

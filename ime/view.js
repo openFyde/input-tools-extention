@@ -44,6 +44,8 @@ goog.ime.chrome.os.View = function(model) {
    * @protected
    */
   this.configFactory = goog.ime.chrome.os.ConfigFactory.getInstance();
+
+  this.optionCache = "";
 };
 
 
@@ -114,8 +116,9 @@ goog.ime.chrome.os.View.prototype.updateItems = function() {
  * To show the editor.
  */
 goog.ime.chrome.os.View.prototype.show = function() {
+  console.log('show');
   if (this.inputToolCode_) {
-    chrome.input.ime.setCandidateWindowProperties(
+    this.setCandidateWindowProperties(
         {'engineID': this.inputToolCode_,
           'properties': {'visible': true}});
   }
@@ -126,8 +129,9 @@ goog.ime.chrome.os.View.prototype.show = function() {
  * To hide the editor.
  */
 goog.ime.chrome.os.View.prototype.hide = function() {
+  console.log('hide');
   if (this.inputToolCode_) {
-    chrome.input.ime.setCandidateWindowProperties(
+    this.setCandidateWindowProperties(
         {'engineID': this.inputToolCode_,
           'properties': {'visible': false}});
   }
@@ -173,6 +177,20 @@ goog.ime.chrome.os.View.prototype.refresh = function() {
 };
 
 
+goog.ime.chrome.os.View.prototype.setCandidateWindowProperties = function (options) {
+  if (options.properties && options.properties.cursorVisible == false) {
+    options.properties.cursorVisible = true;
+  }
+
+  if (this.optionCache == JSON.stringify(options)) {
+    return;
+  }
+  this.optionCache = JSON.stringify(options);
+  console.log('setCandidateWindowProperties: ' + JSON.stringify(options));
+  chrome.input.ime.setCandidateWindowProperties(options);
+
+}
+
 /**
  * To refresh candidates.
  */
@@ -212,16 +230,18 @@ goog.ime.chrome.os.View.prototype.showCandidates = function() {
     if (this.model.auxiliaryText) {
       options.properties.auxiliaryText = this.model.auxiliaryText;
       options.properties.auxiliaryTextVisible = true;
+    } else {
+      options.properties.auxiliaryTextVisible = false;
     }
-
-    chrome.input.ime.setCandidateWindowProperties(options);
+    
+    this.setCandidateWindowProperties(options);
     if (hasHighlight) {
       chrome.input.ime.setCursorPosition({
         'contextID': this.context_.contextID,
         'candidateID': this.model.highlightIndex % pageSize});
     }
   } else {
-    chrome.input.ime.setCandidateWindowProperties({
+    this.setCandidateWindowProperties({
       'engineID': this.inputToolCode_,
       'properties': {'visible': false}});
   }

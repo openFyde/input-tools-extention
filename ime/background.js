@@ -97,17 +97,16 @@ goog.ime.chrome.os.Background.prototype.init_ = function() {
   chrome.input.ime.onFocus.addListener(function(context) {
     console.log(">>>onFocus");
     self.controller_.register(context);
-
-    console.log(">>>onFocus: " + window.localStorage.getItem("schema_change"));
-
     if (window.localStorage.getItem("schema_change")) {
       // for double pinyin
       self.controller_.keyActionTable_ = self.controller_.getKeyActionTable();
 
       // reload web socket
-      self.controller_.model.reloadWebSocket();
+      self.controller_.model.reloadWebSocket(true);
 
       window.localStorage.setItem("schema_change", "");
+    } else {
+      self.controller_.model.reloadWebSocket(false);
     }
   });
 

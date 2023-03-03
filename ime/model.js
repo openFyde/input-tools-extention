@@ -64,6 +64,8 @@ goog.ime.chrome.os.Model = function() {
    */
   this.configFactory = goog.ime.chrome.os.ConfigFactory.getInstance();
 
+  this.socketReady = false;
+
   this.initWebSocket();
 };
 goog.inherits(goog.ime.chrome.os.Model, goog.events.EventTarget);
@@ -283,6 +285,7 @@ goog.ime.chrome.os.Model.prototype.notifyUpdates = function(opt_commit) {
  * Clears the model to its initial state.
  */
 goog.ime.chrome.os.Model.prototype.clear = function() {
+  console.log("clear");
   if (this.status != goog.ime.chrome.os.Status.INIT) {
     this.dispatchEvent(goog.ime.chrome.os.EventType.CLOSING);
   }
@@ -547,6 +550,7 @@ goog.ime.chrome.os.Model.prototype.firstCandidateLineBack = function (line) {
   this.cursorPos = prefixSegments.length;
   if (parts.length > 1) {
       this.auxiliaryText = parts[1].split('）')[0];
+      console.log("auxiliaryText", this.auxiliaryText);
   }
 
   this.status = goog.ime.chrome.os.Status.FETCHED;
@@ -564,18 +568,22 @@ goog.ime.chrome.os.Model.prototype.firstCandidateLineBack = function (line) {
   }
 }
 
-goog.ime.chrome.os.Model.prototype.reloadWebSocket = function() {
-  if (this.socket) {
+goog.ime.chrome.os.Model.prototype.reloadWebSocket = function(force) {
+  if (!this.socketReady) {
+    this.initWebSocket();
+  } else if (force) {
     this.socket.close();
+    this.initWebSocket();
   }
-  this.initWebSocket();
 }
+
 
 goog.ime.chrome.os.Model.prototype.initWebSocket = function() {
   console.log("initWebSocket");
+  let self = this;
   this.socket = new WebSocket(this.RimeWebSocketURL, "candidate");
-  this.socket.onopen = (e) => {console.log("socket open");};
-  this.socket.onerror = (e) => {console.log("socket error", e);};
+  this.socket.onopen = (e) => {console.log("socket open"); self.socketReady = true;};
+  this.socket.onerror = (e) => {console.log("socket error", e); self.socketReady = false;};
 
   let that = this;
   this.socket.onclose = function(event) {
@@ -584,6 +592,7 @@ goog.ime.chrome.os.Model.prototype.initWebSocket = function() {
     } else {
       console.log('[close] Connection died');
     }
+    self.socketReady = false;
   };
 
   this.socket.onmessage = function(event) {
